@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Household builder</title>
+        <style>
+            .debug {
+                padding: 10px;
+                display: none;
+            }
+            .household-list {
+                width:100% ;
+                border-collapse: collapse;              
+            }
+            .click{
+	            width:100px; 
+	            background-color:skyblue;
+	            cursor: pointer;
+            }       
+        </style>
+    </head>
+    <body>
+        <h1>Household builder</h1>
+        <div class="builder">
+            <ol class="household"></ol>
+            <form class="household-form">
+                <div>
+                    <label>Age</label>
+                    <input name="age" class="age" type="number"/>                    
+                </div>
+                <br>
+               <div>
+                    <label>Relationship
+                        <select name="rel" id="relationShipName" class="rel-name" >
+                            <option value="">---</option>
+                            <option value="self">Self</option>
+                            <option value="spouse">Spouse</option>
+                            <option value="child">Child</option>
+                            <option value="parent">Parent</option>
+                            <option value="grandparent">Grandparent</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </label>
+                </div>
+                <br>
+                <div>
+                    <label>Smoker?
+                        <input type="checkbox" name="smoker" class="smoker">
+                    </label>
+                </div>
+                <br>
+                <div>
+                    <input type="button" class="add click" onclick="javascript: householdClass.addHousehold(this);" value="Add" h-id ="" />
+                    
+                </div>
+                <div>
+                    <input type="button" class="submit click" onclick="javascript: householdClass.submitHouseHolds();" value="Submit" />
+                </div>
+            </form>
+        </div>
+        <br>
+        <!-- <pre class="debug"> -->
+                <table class="household-list"  border=2>
+                    <thead >
+                        <tr>
+                            <th>Age</th>
+                            <th>Relationship</th>
+                            <th>Smoker?</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="household-data-list" style="text-align:center"></tbody>
+                </table>
+        <!-- </pre> -->
+        <script>
+            // your code goes here ...
+            var householdList = [];
+            var id_index = 0;
+            var householdClass = {
+                /* This is for to create generic id for the each household */
+                generateUniqueHouseHoldId: function() {
+                    var id =  'h_' + id_index;
+                    id_index++;
+                    return id;
+                },
+                addHousehold: function(element) {
+                    var age, relationShipName, isSmoker, householdObj = {};
+                    age = document.querySelector('.age').value;
+                    relationShipName = document.querySelector('.rel-name').value;
+                    isSmoker = document.querySelector('.smoker');
+                    if (age != 'undefined' && age != '') {
+                        age = parseInt(age);
+                        if (age > 0) {
+                            householdObj.age = age;
+                            if (relationShipName != undefined && relationShipName != '') {
+                                householdObj.relationShipName = relationShipName;
+                                householdObj.isSmoker = isSmoker.checked;
+                                
+                                householdList.push(householdObj);
+                                /* To check whether the enetered information is update or create */
+                                if (element.getAttribute('h-id') != '' && element.getAttribute('h-id') != undefined) {
+                                    householdObj.householdId = element.getAttribute('h-id');
+                                    this.updateHousehold(element.getAttribute('h-id'), householdObj);
+                                }
+                                else {
+                                    householdObj.householdId = this.generateUniqueHouseHoldId();
+                                    this.renderHouseholdsList(householdObj);
+                                }
+                                document.querySelector('.household-form').reset();
+                            }
+                            else {
+                                alert('Relationship should not be empty');
+                            }                        
+                        }
+                        else {
+                            alert('Age should be greater than 0');
+                        }                    
+                    }
+                    else {
+                        alert('Age and Relationship are mandatory');
+                    }       
+                },
+                /* Adding new record to table */
+                renderHouseholdsList: function(householdData) {
+                    var dataHtmlArray = [];
+                    var householdTable = document.querySelector('.household-list');
+                    if (householdTable == undefined) {
+                        return;
+                    }
+                    var tBody = document.querySelector('.household-data-list');
+                    var newRow = tBody.insertRow();
+                    var cell1 = newRow.insertCell();
+                    cell1.innerHTML = householdData.age;
+                    var cell2 = newRow.insertCell();
+                    cell2.innerHTML = householdData.relationShipName;
+                    var cell3 = newRow.insertCell();
+                    cell3.innerHTML = householdData.isSmoker ? 'Yes' : 'No';
+                    var cell4 = newRow.insertCell();
+                    var currentHouseholdIndex = tBody.rows.length;
+                    cell4.innerHTML = '<div class="acion-lbl" h-id="'+householdData.householdId+'" onclick="javscript: householdClass.populateDataHousehold(this)"><button type="button" class="click">Edit</button></div><div h-id="'+householdData.householdId+'" class="acion-lbl" onclick="javscript: householdClass.deleteHousehold(this)"><button type="button" class="click">Delete</button></div>';
+                },
+                /* Populating data to form for update */
+                populateDataHousehold: function (element) {
+                    if (householdList.length > 0) {
+                        var selectedHIndex = this.getIndexOfHouseholdById(element.getAttribute('h-id'));
+                        var selectedHouseHoldObj = householdList[selectedHIndex];  
+                        document.querySelector('.age').value = selectedHouseHoldObj.age;
+                        document.querySelector('.rel-name').value = selectedHouseHoldObj.relationShipName;
+                        document.querySelector('.smoker').checked = selectedHouseHoldObj.isSmoker;
+                        var btnObj = document.querySelector('.add');
+                        btnObj.setAttribute('h-id',selectedHouseHoldObj.householdId);
+                        btnObj.value = 'Update';
+                    }               
+                },
+                deleteHousehold: function(element) {
+                    var selectedHIndex = this.getIndexOfHouseholdById(element.getAttribute('h-id'));
+                    document.querySelector('.household-data-list').deleteRow(selectedHIndex);
+                    householdList.splice(selectedHIndex, 1);
+                    document.querySelector('.household-form').reset();
+                    var btnObj = document.querySelector('.add');
+                    btnObj.setAttribute('h-id','');
+                    btnObj.value = 'Add';
+                },
+                updateHousehold: function(householdId, householdObj) {
+                    var selectedHIndex = this.getIndexOfHouseholdById(householdId);
+                    var tBody = document.querySelector('.household-data-list');
+                    var tRow = tBody.rows[selectedHIndex];
+                    tRow.cells[0].innerHTML = householdObj.age;
+                    tRow.cells[1].innerHTML = householdObj.relationShipName;
+                    tRow.cells[2].innerHTML = householdObj.isSmoker ? 'Yes': 'No';
+                    householdList[selectedHIndex] = householdObj;
+                    var btnObj = document.querySelector('.add');
+                    btnObj.setAttribute('h-id','');
+                    btnObj.value = 'Add';
+                },
+                /* Get the household object by its Id */
+                getIndexOfHouseholdById: function(householdId) {
+                    for (var i = 0; i < householdList.length; i++) {
+                        if (householdList[i].householdId == householdId) {
+                            return i;
+                        }
+                    };
+                },
+                /* Submit the households to server, currently WIP ( Rest API is not available) */
+                submitHouseHolds: function() {
+                    if (householdList.length > 0) {
+                        var http = new XMLHttpRequest();
+                        var url = "/rest/submitHouseHolds";
+                        var params = JSON.stringify(householdList);
+                        http.open("POST", url, true);
+                        //Send the proper header information along with the request
+                        http.setRequestHeader("Content-type", "application/json");
+                        http.onreadystatechange = function() {//Call a function when the state changes.
+                            if(http.readyState == 4 && http.status == 200) {
+                                alert('Households saved successfully');
+                            }
+                        }
+                        http.send(params);
+                    }
+                    else {
+                        alert('Please add atleast one household');
+                    }                
+                }
+            }
+        </script>
+    </body>
+</html>
